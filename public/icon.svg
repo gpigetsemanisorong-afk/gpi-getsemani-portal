@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#7F1D1D" />
+  <circle cx="256" cy="256" r="194" fill="none" stroke="#F59E0B" stroke-width="10" stroke-opacity="0.85" />
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#FDE68A" stroke-width="3" stroke-opacity="0.45" />
+  <!-- Liturgical Cross -->
+  <rect x="242" y="108" width="28" height="236" rx="6" fill="#FBBF24" />
+  <rect x="166" y="176" width="180" height="28" rx="6" fill="#FBBF24" />
+  <!-- Stylized Papua Waves & Open Book at base -->
+  <path d="M132 328 Q194 294 256 328 T380 328" fill="none" stroke="#FDE68A" stroke-width="12" stroke-linecap="round" />
+  <path d="M156 364 Q206 338 256 364 T356 364" fill="none" stroke="#F59E0B" stroke-width="10" stroke-linecap="round" />
+</svg>

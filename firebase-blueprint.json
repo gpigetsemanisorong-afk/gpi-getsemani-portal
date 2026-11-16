@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "PrayerRequest": {
+      "title": "PrayerRequest",
+      "description": "Permohonan doa yang dikirimkan oleh jemaat melalui Kotak Doa portal.",
+      "type": "object",
+      "properties": {
+        "requesterName": {
+          "type": "string",
+          "description": "Nama pemohon doa atau 'Anonim' jika jemaat memilih rahasia.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "isAnonymous": {
+          "type": "boolean",
+          "description": "Menandakan apakah pengirim memilih untuk menyembunyikan nama."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Nomor telepon atau WhatsApp pemohon (opsional).",
+          "maxLength": 30
+        },
+        "category": {
+          "type": "string",
+          "description": "Kategori pokok permohonan doa.",
+          "enum": [
+            "Kesembuhan",
+            "Keluarga & Rumah Tangga",
+            "Pekerjaan & Usaha",
+            "Pendidikan & Masa Depan",
+            "Ucapan Syukur",
+            "Pelayanan & Gereja",
+            "Lainnya"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "description": "Asal sektor atau unit pelayanan jemaat.",
+          "maxLength": 80
+        },
+        "prayerText": {
+          "type": "string",
+          "description": "Isi permohonan doa yang disampaikan jemaat.",
+          "minLength": 5,
+          "maxLength": 1500
+        },
+        "status": {
+          "type": "string",
+          "description": "Status tindak lanjut oleh Majelis Jemaat.",
+          "enum": ["Menunggu", "Didoakan", "Selesai"]
+        },
+        "adminNote": {
+          "type": "string",
+          "description": "Catatan pastoral atau tindak lanjut dari Majelis Jemaat.",
+          "maxLength": 600
+        },
+        "handledBy": {
+          "type": "string",
+          "description": "Nama atau akun Majelis yang menangani permohonan doa.",
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu permohonan doa dikirim (server timestamp)."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu terakhir status atau catatan doa diperbarui (server timestamp)."
+        }
+      },
+      "required": [
+        "requesterName",
+        "isAnonymous",
+        "phone",
+        "category",
+        "unit",
+        "prayerText",
+        "status",
+        "adminNote",
+        "handledBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminAccess": {
+      "title": "AdminAccess",
+      "description": "Daftar pengguna Google yang memiliki hak akses Majelis untuk mengelola Kotak Doa.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 150
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin1", "admin2", "superuser"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "displayName", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/prayerRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/PrayerRequest" },
+      "description": "Koleksi permohonan doa jemaat pada fitur Kotak Doa."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminAccess" },
+      "description": "Hak akses Majelis Jemaat yang disetujui untuk mengelola Kotak Doa."
+    }
+  }
+}

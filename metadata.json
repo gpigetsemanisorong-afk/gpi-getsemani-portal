@@ -1,0 +1,6 @@
+{
+  "name": "GPI Getsemani Sorong",
+  "description": "Portal Informasi Jemaat Gereja Protestan Indonesia di Papua (GPI Papua - Klasis Sorong Raya) dengan Tata Ibadah, Jadwal, Warta, Kidung Pujian, Alkitab, dan Dashboard Majelis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

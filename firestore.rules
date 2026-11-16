@@ -1,0 +1,170 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             request.auth.token.email == 'gpigetsemanisorong@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             (
+               request.auth.token.email == 'gpigetsemanisorong@gmail.com' ||
+               exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+             );
+    }
+
+    function isValidPrayerCategory(cat) {
+      return cat in [
+        'Kesembuhan',
+        'Keluarga & Rumah Tangga',
+        'Pekerjaan & Usaha',
+        'Pendidikan & Masa Depan',
+        'Ucapan Syukur',
+        'Pelayanan & Gereja',
+        'Lainnya'
+      ];
+    }
+
+    function isValidPrayerStatus(status) {
+      return status in ['Menunggu', 'Didoakan', 'Selesai'];
+    }
+
+    function isValidPrayerRequest(data) {
+      return data.keys().hasAll([
+               'requesterName',
+               'isAnonymous',
+               'phone',
+               'category',
+               'unit',
+               'prayerText',
+               'status',
+               'adminNote',
+               'handledBy',
+               'createdAt',
+               'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'requesterName',
+               'isAnonymous',
+               'phone',
+               'category',
+               'unit',
+               'prayerText',
+               'status',
+               'adminNote',
+               'handledBy',
+               'createdAt',
+               'updatedAt'
+             ]) &&
+             data.requesterName is string &&
+             data.requesterName.size() >= 1 &&
+             data.requesterName.size() <= 100 &&
+             data.isAnonymous is bool &&
+             data.phone is string &&
+             data.phone.size() <= 30 &&
+             data.category is string &&
+             isValidPrayerCategory(data.category) &&
+             data.unit is string &&
+             data.unit.size() <= 80 &&
+             data.prayerText is string &&
+             data.prayerText.size() >= 5 &&
+             data.prayerText.size() <= 1500 &&
+             data.status is string &&
+             isValidPrayerStatus(data.status) &&
+             data.adminNote is string &&
+             data.adminNote.size() <= 600 &&
+             data.handledBy is string &&
+             data.handledBy.size() <= 100 &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidAdminAccess(data) {
+      return data.keys().hasAll(['email', 'displayName', 'role', 'createdAt']) &&
+             data.keys().hasOnly(['email', 'displayName', 'role', 'createdAt']) &&
+             data.email is string &&
+             data.email.size() >= 3 &&
+             data.email.size() <= 150 &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 100 &&
+             data.role in ['admin1', 'admin2', 'superuser'] &&
+             data.createdAt is timestamp;
+    }
+
+    match /prayerRequests/{requestId} {
+      // Hanya Majelis Admin terverifikasi yang dapat membaca / mengelola isi Kotak Doa (menjaga privasi jemaat)
+      allow get: if isValidId(requestId) && isAdmin();
+      allow list: if isAdmin();
+
+      // Jemaat dapat mengirimkan permohonan doa ke Kotak Doa dengan validasi skema ketat
+      allow create: if isValidId(requestId) &&
+                       isValidPrayerRequest(incoming()) &&
+                       incoming().status == 'Menunggu' &&
+                       incoming().adminNote == '' &&
+                       incoming().handledBy == '' &&
+                       incoming().createdAt == request.time &&
+                       incoming().updatedAt == request.time;
+
+      // Majelis Admin dapat memperbarui status & catatan pastoral tanpa mengubah isi doa asli jemaat
+      allow update: if isValidId(requestId) &&
+                       isAdmin() &&
+                       isValidPrayerRequest(incoming()) &&
+                       incoming().requesterName == existing().requesterName &&
+                       incoming().isAnonymous == existing().isAnonymous &&
+                       incoming().phone == existing().phone &&
+                       incoming().category == existing().category &&
+                       incoming().unit == existing().unit &&
+                       incoming().prayerText == existing().prayerText &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt == request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'status',
+                         'adminNote',
+                         'handledBy',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isValidId(requestId) && isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) &&
+                       isSuperAdmin() &&
+                       isValidAdminAccess(incoming()) &&
+                       incoming().createdAt == request.time;
+      allow update: if isValidId(uid) &&
+                       isSuperAdmin() &&
+                       isValidAdminAccess(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'role']);
+      allow delete: if isValidId(uid) && isSuperAdmin();
+    }
+  }
+}
